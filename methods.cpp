@@ -5291,11 +5291,10 @@ void(*fillSysMatrix)(std::vector<std::vector<Type>>&, Type, Type, std::size_t, T
     if (solution.size() != numOfXIntervals + 1){
         solution.resize(numOfXIntervals + 1);
     }
-
     Type h = (b - a) / numOfXIntervals;
-    std::vector<std::vector<Type>> sysMatrix(numOfXIntervals + 1);
 
     // Заполнение матрицы
+    std::vector<std::vector<Type>> sysMatrix(numOfXIntervals + 1);
     fillSysMatrix(sysMatrix, a, h, numOfXIntervals, lambda, K);
 
     // Заполнение вектора правой части
@@ -5324,4 +5323,41 @@ void(*fillSysMatrix)(std::vector<std::vector<Type>>&, Type, Type, std::size_t, T
     }
 
     return h;
+}
+
+// Квадратурные формулы для вычислений интеграла в уравнении Фредгольма в точке x
+template<typename Type>
+Type trapezoidQuad(const std::vector<Type> &UVec, Type x, Type a, std::size_t numOfXIntervals, Type h, Type (*K)(Type, Type)){
+    Type quadSum = 0.0;
+    for (std::size_t i = 1; i < numOfXIntervals + 1; i++){
+        quadSum += (K(x, a + (i - 1) * h) * UVec[i - 1] + K(x, a + i * h) * UVec[i]) * h / 2.0;
+    }
+    return quadSum;
+}
+
+// Решние интегрального уравнения методом простой итерации
+template<typename Type>
+std::size_t getSecondFredholmIntegral_SIt(std::vector<Type> &solution, Type (*U0)(Type), std::size_t numOfXIntervals, Type a, Type b, Type lambda, Type (*K)(Type, Type), Type (*f)(Type), 
+Type (*quadMethod)(const std::vector<Type>&, Type, Type, std::size_t, Type, Type (*)(Type, Type)), Type eps, std::size_t stopIt){
+    if (solution.size() != numOfXIntervals + 1){
+        solution.resize(numOfXIntervals + 1);
+    } 
+    Type h = (b - a) / numOfXIntervals;
+    for (size_t i = 0; i < numOfXIntervals + 1; i++){
+        solution[i] = U0(a + i * h);
+    }
+    std::vector<Type> prevSolution(numOfXIntervals + 1);
+    std::size_t numOfIterations = 0; 
+    do{
+        prevSolution = solution;
+        for (std::size_t i = 0; i < numOfXIntervals + 1; i++){
+            solution[i] = f(a + i * h) + lambda * quadMethod(prevSolution, a + i * h, a, numOfXIntervals, h, K);
+        }
+        numOfIterations++;
+        Type norm = normOfVector(solution - prevSolution, INFINITY);
+        if(numOfIterations == 100){
+            Type a = 5.0;
+        }
+    } while (normOfVector(solution - prevSolution, INFINITY) > eps && numOfIterations != stopIt);
+    return numOfIterations;
 }

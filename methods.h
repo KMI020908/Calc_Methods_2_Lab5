@@ -485,4 +485,14 @@ template<typename Type>
 Type getSecondFredholmIntegral_QM(std::vector<Type> &solution, std::size_t numOfXIntervals, Type a, Type b, Type lambda, Type (*K)(Type, Type), Type (*f)(Type), 
 void(*fillSysMatrix)(std::vector<std::vector<Type>>&, Type, Type, std::size_t, Type, Type(*)(Type, Type)), SYSTEM_FLAG sysMethod);
 
+
+// Квадратурные формулы для вычислений интеграла в уравнении Фредгольма в точке x
+template<typename Type>
+Type trapezoidQuad(const std::vector<Type> &UVec, Type x, Type a, std::size_t numOfXIntervals, Type h, Type (*K)(Type, Type));
+
+// Решние интегрального уравнения методом простой итерации
+template<typename Type>
+std::size_t getSecondFredholmIntegral_SIt(std::vector<Type> &solution, Type (*U0)(Type), std::size_t numOfXIntervals, Type a, Type b, Type lambda, Type (*K)(Type, Type), Type (*f)(Type), 
+Type (*quadMethod)(const std::vector<Type>&, Type, Type, std::size_t, Type, Type (*)(Type, Type)), Type eps = 1e-6, std::size_t stopIt = 50000);
+
 #endif

@@ -27,6 +27,20 @@ void(*fillSysMatrix)(std::vector<std::vector<Type>>&, Type, Type, std::size_t, T
     writeVectorFile(solution, SOLUTION_FILE);
 }
 
+// Проверка решений методом простой итерации
+template<typename Type>
+void checkSimpleIt(std::size_t numOfEq, std::size_t numOfXIntervals, Type a, Type b, Type lambda, Type (*K)(Type, Type), Type (*f)(Type), Type (*U0)(Type),
+Type quadMethod(const std::vector<Type>&, Type, Type, std::size_t, Type, Type (*)(Type, Type)), Type eps = 1e-6, std::size_t stopIt = 50000){
+    std::vector<Type> solution;
+    std::string SOLUTION_FILE;
+    std::string DATA_FILE;
+    getFileNames(numOfEq, SOLUTION_FILE, DATA_FILE, "SimpleItMethod");
+    std::vector<Type> dataVec = {a, b, lambda};
+    writeVectorFile(dataVec, DATA_FILE);
+    writeScalarFile(numOfXIntervals, DATA_FILE, true);
+    std::cout << "Количество итераций уравнения " << numOfEq << ":\t" << getSecondFredholmIntegral_SIt(solution, U0, numOfXIntervals, a, b, lambda, K, f, quadMethod, eps, stopIt) << '\n';
+    writeVectorFile(solution, SOLUTION_FILE);
+}
 /*
 // Решенние уравнения Пуассона
 template<typename Type>
@@ -75,35 +89,57 @@ Type(*U0)(Type x, Type y), Type(*T)(Type x, Type y), Type(*Q)(Type x, Type y), T
 */
 
 // Сделать, чтобы системы решались одним методом
-void makeSameSysQ(bool isSameSysMethod, SYSTEM_FLAG &sysMethod, const SYSTEM_FLAG &sameSysMethod){
-    if (isSameSysMethod){
-        sysMethod = sameSysMethod;
+template<typename Type>
+void makeSameQ(bool isSame, Type &var, const Type &sameVar){
+    if (isSame){
+        var = sameVar;
     }
 }
 
 // Сделать, чтобы системы были построены одной квадратурой
 template<typename Type>
-void makeSameQuadQ(bool isSameSysQuad, void(**fillSysMatrix)(std::vector<std::vector<Type>>&, Type, Type, std::size_t, Type, Type(*)(Type, Type)), void(**fillSameSysMatrix)(std::vector<std::vector<Type>>&, Type, Type, std::size_t, Type, Type(*)(Type, Type))){
+void makeSameSysQuadQ(bool isSameSysQuad, void(**fillSysMatrix)(std::vector<std::vector<Type>>&, Type, Type, std::size_t, Type, Type(*)(Type, Type)), void(**fillSameSysMatrix)(std::vector<std::vector<Type>>&, Type, Type, std::size_t, Type, Type(*)(Type, Type))){
     if (isSameSysQuad){
         *fillSysMatrix = *fillSameSysMatrix;
+    }
+}
+
+// Сделать, чтобы квадратуры в методе простой итерации были одинаковые
+template<typename Type>
+void makeSameQuadQ(bool isSameQuad, Type (**quadMethod)(const std::vector<Type>&, Type, Type, std::size_t, Type, Type (*)(Type, Type)), Type (**sameQuadMethod)(const std::vector<Type>&, Type, Type, std::size_t, Type, Type (*)(Type, Type))){
+    if (isSameQuad){
+        *quadMethod = *sameQuadMethod;
     }
 }
 
 template<typename Type>
 void temp_main(){
     std::size_t numOfEq;
-    Type a, b, lambda;
-    std::size_t numOfXIntervals;
+    Type a, b, lambda, eps;
+    std::size_t numOfXIntervals, stopIt;
     Type (*K)(Type x, Type y) = nullptr;
     Type (*f)(Type x) = nullptr;
+    Type (*U0)(Type x) = nullptr;
     void(*fillSysMatrix)(std::vector<std::vector<Type>>&, Type, Type, std::size_t, Type, Type(*)(Type, Type)) = nullptr;
+    Type (*quadMethod)(const std::vector<Type>&, Type, Type, std::size_t, Type, Type (*)(Type, Type)) = nullptr;
     SYSTEM_FLAG sysMethod;
 
+    // Сделать все методы решения СЛАУ одинаковыми для метода квадратур
     bool isSameSysMethod = true;
     SYSTEM_FLAG sameSysMethod = GM;
 
+    // Сделать все квадратуры в методе квадратур одинаковыми 
     bool isSameSysQuad = true;
     void(*fillSameSysMatrix)(std::vector<std::vector<Type>>&, Type, Type, std::size_t, Type, Type(*)(Type, Type)) = fillSysMatrixSimpson;
+
+    // Сделать все квадратуры в методе простой итерации одинаковыми 
+    bool isSameQuadMethodSimpleIt = true;
+    Type (*sameQuadMethod)(const std::vector<Type>&, Type, Type, std::size_t, Type, Type (*)(Type, Type)) = trapezoidQuad;
+
+    // Сделать все точности одинаковыми
+    bool isSameEps = true;
+    Type sameEps = 1e-6;
+
 
     // Первый тест из методички при [a, b] = [0, 1]
     numOfEq = 1;
@@ -113,11 +149,20 @@ void temp_main(){
     f = f1;
     lambda = 1.0;
     numOfXIntervals = 100;
+
     sysMethod = GM;
-    makeSameSysQ(isSameSysMethod, sysMethod, sameSysMethod);
+    makeSameQ(isSameSysMethod, sysMethod, sameSysMethod);
     fillSysMatrix = fillSysMatrixTrapezoid;
-    makeSameQuadQ(isSameSysQuad, &fillSysMatrix, &fillSameSysMatrix);
-    checkQuadMethod(numOfEq, numOfXIntervals, a, b, lambda, K, f, fillSysMatrix, sysMethod);
+    makeSameSysQuadQ(isSameSysQuad, &fillSysMatrix, &fillSameSysMatrix);
+    //checkQuadMethod(numOfEq, numOfXIntervals, a, b, lambda, K, f, fillSysMatrix, sysMethod);
+
+    eps = 1e-6;
+    U0 = [](Type x){return 0.0;};
+    quadMethod = trapezoidQuad;
+    makeSameQuadQ(isSameQuadMethodSimpleIt, &quadMethod, &sameQuadMethod);
+    makeSameQ(isSameEps, eps, sameEps);
+    //checkSimpleIt(numOfEq, numOfXIntervals, a, b, lambda, K, f, U0, quadMethod, eps);
+
 
     // Первый тест из методички при [a, b] = [0.1, 1]
     numOfEq = 2;
@@ -127,11 +172,20 @@ void temp_main(){
     f = f1;
     lambda = 1.0;
     numOfXIntervals = 100;
+
     sysMethod = GM;
-    makeSameSysQ(isSameSysMethod, sysMethod, sameSysMethod);
+    makeSameQ(isSameSysMethod, sysMethod, sameSysMethod);
     fillSysMatrix = fillSysMatrixTrapezoid;
-    makeSameQuadQ(isSameSysQuad, &fillSysMatrix, &fillSameSysMatrix);
-    checkQuadMethod(numOfEq, numOfXIntervals, a, b, lambda, K, f, fillSysMatrix, sysMethod);
+    makeSameSysQuadQ(isSameSysQuad, &fillSysMatrix, &fillSameSysMatrix);
+    //checkQuadMethod(numOfEq, numOfXIntervals, a, b, lambda, K, f, fillSysMatrix, sysMethod);
+
+    eps = 1e-6;
+    U0 = [](Type x){return 0.0;};
+    quadMethod = trapezoidQuad;
+    makeSameQuadQ(isSameQuadMethodSimpleIt, &quadMethod, &sameQuadMethod);
+    makeSameQ(isSameEps, eps, sameEps);
+    //checkSimpleIt(numOfEq, numOfXIntervals, a, b, lambda, K, f, U0, quadMethod, eps);
+
 
     // Второй тест из методички при [a, b] = [0, 1]
     numOfEq = 3;
@@ -141,11 +195,20 @@ void temp_main(){
     f = f2;
     lambda = 1.0;
     numOfXIntervals = 100;
+
     sysMethod = GM;
-    makeSameSysQ(isSameSysMethod, sysMethod, sameSysMethod);
+    makeSameQ(isSameSysMethod, sysMethod, sameSysMethod);
     fillSysMatrix = fillSysMatrixTrapezoid;
-    makeSameQuadQ(isSameSysQuad, &fillSysMatrix, &fillSameSysMatrix);
-    checkQuadMethod(numOfEq, numOfXIntervals, a, b, lambda, K, f, fillSysMatrix, sysMethod);
+    makeSameSysQuadQ(isSameSysQuad, &fillSysMatrix, &fillSameSysMatrix);
+    //checkQuadMethod(numOfEq, numOfXIntervals, a, b, lambda, K, f, fillSysMatrix, sysMethod);
+
+    eps = 1e-6;
+    U0 = [](Type x){return 0.0;};
+    quadMethod = trapezoidQuad;
+    makeSameQuadQ(isSameQuadMethodSimpleIt, &quadMethod, &sameQuadMethod);
+    makeSameQ(isSameEps, eps, sameEps);
+    //checkSimpleIt(numOfEq, numOfXIntervals, a, b, lambda, K, f, U0, quadMethod, eps);
+
 
     // Второй тест из методички при [a, b] = [0.1, 1]
     numOfEq = 4;
@@ -155,25 +218,22 @@ void temp_main(){
     f = f2;
     lambda = 1.0;
     numOfXIntervals = 100;
+
     sysMethod = GM;
-    makeSameSysQ(isSameSysMethod, sysMethod, sameSysMethod);
+    makeSameQ(isSameSysMethod, sysMethod, sameSysMethod);
     fillSysMatrix = fillSysMatrixTrapezoid;
-    makeSameQuadQ(isSameSysQuad, &fillSysMatrix, &fillSameSysMatrix);
-    checkQuadMethod(numOfEq, numOfXIntervals, a, b, lambda, K, f, fillSysMatrix, sysMethod);
+    makeSameSysQuadQ(isSameSysQuad, &fillSysMatrix, &fillSameSysMatrix);
+    //checkQuadMethod(numOfEq, numOfXIntervals, a, b, lambda, K, f, fillSysMatrix, sysMethod);
+
+    eps = 1e-6;
+    U0 = [](Type x){return 0.0;};
+    quadMethod = trapezoidQuad;
+    makeSameQuadQ(isSameQuadMethodSimpleIt, &quadMethod, &sameQuadMethod);
+    makeSameQ(isSameEps, eps, sameEps);
+    //checkSimpleIt(numOfEq, numOfXIntervals, a, b, lambda, K, f, U0, quadMethod, eps);
 }
 
 int main(){
     temp_main<double>();
-
-    double(*K)(double x, double y) = [](double x, double y){return 1.0;};
-    double h = 1.0;
-    double lambda = 1.0;
-    std::size_t nx = 6;
-    double a = 0.0;
-    std::vector<std::vector<double>> matrix;
-
-    fillSysMatrixSimpson(matrix, a, h, nx, lambda, K);
-    writeMatrixFile(matrix, "tmp.txt");
-    
     return 0;
 }
