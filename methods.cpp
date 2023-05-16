@@ -5215,10 +5215,10 @@ void fillSysMatrixSimpson(std::vector<std::vector<Type>> &sysMatrix, Type a, Typ
         sysMatrix[0].resize(numOfXIntervals + 1);
         sysMatrix[0][0] = 1.0 - lambda * h * K(a, a) / 3.0;
         for (std::size_t j = 1; j < numOfXIntervals - 1; j += 2){
-            sysMatrix[0][j] = -lambda * h * K(a, a + j * h) / 3.0;
+            sysMatrix[0][j] = -4.0 * lambda * h * K(a, a + j * h) / 3.0;
             sysMatrix[0][j + 1] = -2.0 * lambda * h * K(a, a + (j + 1) * h) / 3.0;
         }
-        sysMatrix[0][numOfXIntervals - 1] = -lambda * h * K(a, a + (numOfXIntervals - 1) * h) / 3.0;
+        sysMatrix[0][numOfXIntervals - 1] = -4.0 * lambda * h * K(a, a + (numOfXIntervals - 1) * h) / 3.0;
         sysMatrix[0][numOfXIntervals] = - lambda * h * K(a, a + numOfXIntervals * h) / 3.0;
 
         // Заполнение проможуточных нечетных строк
@@ -5227,19 +5227,19 @@ void fillSysMatrixSimpson(std::vector<std::vector<Type>> &sysMatrix, Type a, Typ
             sysMatrix[i][0] = - lambda * h * K(a + i * h, a) / 3.0;
 
             for (std::size_t j = 1; j < i; j += 2){
-                sysMatrix[i][j] = -lambda * h * K(a + i * h, a + j * h) / 3.0;
+                sysMatrix[i][j] = -4.0 * lambda * h * K(a + i * h, a + j * h) / 3.0;
                 sysMatrix[i][j + 1] = -2.0 * lambda * h * K(a + i * h, a + (j + 1) * h) / 3.0;
             }
             
-            sysMatrix[i][i] = 1.0 - lambda * h * K(a + i * h, a + i * h) / 3.0;
+            sysMatrix[i][i] = 1.0 - 4.0 * lambda * h * K(a + i * h, a + i * h) / 3.0;
             sysMatrix[i][i + 1] = -2.0 * lambda * h * K(a + i * h, a + (i + 1) * h) / 3.0;
 
             for (std::size_t j = i + 2; j < numOfXIntervals - 1; j += 2){
-                sysMatrix[i][j] = -lambda * h * K(a + i * h, a + j * h) / 3.0;
+                sysMatrix[i][j] = -4.0 * lambda * h * K(a + i * h, a + j * h) / 3.0;
                 sysMatrix[i][j + 1] = -2.0 * lambda * h * K(a + i * h, a + (j + 1) * h) / 3.0;
             }
-            sysMatrix[i][numOfXIntervals - 1] = -lambda * h * K(a + i * h, a + (numOfXIntervals - 1) * h) / 3.0;
-            sysMatrix[i][numOfXIntervals] = - lambda * h * K(a + i * h, a + numOfXIntervals * h) / 3.0;
+            sysMatrix[i][numOfXIntervals - 1] = -4.0 * lambda * h * K(a + i * h, a + (numOfXIntervals - 1) * h) / 3.0;
+            sysMatrix[i][numOfXIntervals] = -lambda * h * K(a + i * h, a + numOfXIntervals * h) / 3.0;
         }
 
         // Заполнение проможуточных четных строк
@@ -5248,38 +5248,36 @@ void fillSysMatrixSimpson(std::vector<std::vector<Type>> &sysMatrix, Type a, Typ
             sysMatrix[i][0] = - lambda * h * K(a + i * h, a) / 3.0;
 
             for (std::size_t j = 1; j < i - 1; j += 2){
-                sysMatrix[i][j] = -lambda * h * K(a + i * h, a + j * h) / 3.0;
+                sysMatrix[i][j] = -4.0 * lambda * h * K(a + i * h, a + j * h) / 3.0;
                 sysMatrix[i][j + 1] = -2.0 * lambda * h * K(a + i * h, a + (j + 1) * h) / 3.0;
             }
             
-            sysMatrix[i][i - 1] = -lambda * h * K(a + i * h, a + (i - 1) * h) / 3.0;
+            sysMatrix[i][i - 1] = -4.0 * lambda * h * K(a + i * h, a + (i - 1) * h) / 3.0;
             sysMatrix[i][i] = 1.0 - 2.0 * lambda * h * K(a + i * h, a + i * h) / 3.0;
 
             for (std::size_t j = i + 1; j < numOfXIntervals - 1; j += 2){
-                sysMatrix[i][j] = -lambda * h * K(a + i * h, a + j * h) / 3.0;
+                sysMatrix[i][j] = -4.0 * lambda * h * K(a + i * h, a + j * h) / 3.0;
                 sysMatrix[i][j + 1] = -2.0 * lambda * h * K(a + i * h, a + (j + 1) * h) / 3.0;
             }
-            sysMatrix[i][numOfXIntervals - 1] = -lambda * h * K(a + i * h, a + (numOfXIntervals - 1) * h) / 3.0;
+            sysMatrix[i][numOfXIntervals - 1] = -4.0 * lambda * h * K(a + i * h, a + (numOfXIntervals - 1) * h) / 3.0;
             sysMatrix[i][numOfXIntervals] = - lambda * h * K(a + i * h, a + numOfXIntervals * h) / 3.0;
         }
 
         // Заполнение последних двух строк
-
         for (std::size_t i = numOfXIntervals - 1; i < numOfXIntervals + 1; i++){
             sysMatrix[i].resize(numOfXIntervals + 1);
             sysMatrix[i][0] = -lambda * h * K(a + i * h, a) / 3.0;
             for (std::size_t j = 1; j < numOfXIntervals - 1; j += 2){
-                sysMatrix[i][j] = -lambda * h * K(a + i * h, a + j * h) / 3.0;
+                sysMatrix[i][j] = -4.0 * lambda * h * K(a + i * h, a + j * h) / 3.0;
                 sysMatrix[i][j + 1] = -2.0 * lambda * h * K(a + i * h, a + (j + 1) * h) / 3.0;
             }
             if (i == numOfXIntervals - 1){
-                sysMatrix[i][numOfXIntervals - 1] = 1.0 - lambda * h * K(a + i * h, a + (numOfXIntervals - 1) * h) / 3.0;
+                sysMatrix[i][numOfXIntervals - 1] = 1.0 - 4.0 * lambda * h * K(a + i * h, a + (numOfXIntervals - 1) * h) / 3.0;
                 sysMatrix[i][numOfXIntervals] = -lambda * h * K(a + i * h, a + numOfXIntervals * h) / 3.0;
             }else{
-                sysMatrix[i][numOfXIntervals - 1] = -lambda * h * K(a + i * h, a + (numOfXIntervals - 1) * h) / 3.0;
+                sysMatrix[i][numOfXIntervals - 1] = -4.0 * lambda * h * K(a + i * h, a + (numOfXIntervals - 1) * h) / 3.0;
                 sysMatrix[i][numOfXIntervals] = 1.0 - lambda * h * K(a + i * h, a + numOfXIntervals * h) / 3.0;
             }
-            
         }
     }
 }

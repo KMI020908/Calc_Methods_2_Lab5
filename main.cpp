@@ -112,7 +112,7 @@ void temp_main(){
     K = K1;
     f = f1;
     lambda = 1.0;
-    numOfXIntervals = 6;
+    numOfXIntervals = 100;
     sysMethod = GM;
     makeSameSysQ(isSameSysMethod, sysMethod, sameSysMethod);
     fillSysMatrix = fillSysMatrixTrapezoid;
@@ -168,7 +168,7 @@ int main(){
     double(*K)(double x, double y) = [](double x, double y){return 1.0;};
     double h = 1.0;
     double lambda = 1.0;
-    std::size_t nx = 8;
+    std::size_t nx = 6;
     double a = 0.0;
     std::vector<std::vector<double>> matrix;
 
