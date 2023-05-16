@@ -5199,7 +5199,7 @@ void fillSysMatrixTrapezoid(std::vector<std::vector<Type>> &sysMatrix, Type a, T
     sysMatrix[numOfXIntervals].resize(numOfXIntervals + 1);
     sysMatrix[numOfXIntervals][0] = - lambda * h * K(a + numOfXIntervals * h, a) / 2.0;
     for (std::size_t j = 1; j < numOfXIntervals; j++){
-        sysMatrix[0][j] = -lambda * h * K(a + numOfXIntervals * h, a + j * h);
+        sysMatrix[numOfXIntervals][j] = -lambda * h * K(a + numOfXIntervals * h, a + j * h);
     }
     sysMatrix[numOfXIntervals][numOfXIntervals] = 1.0 - lambda * h * K(a + numOfXIntervals * h, a + numOfXIntervals * h) / 2.0;
 }

@@ -112,7 +112,7 @@ void temp_main(){
     K = K1;
     f = f1;
     lambda = 1.0;
-    numOfXIntervals = 100;
+    numOfXIntervals = 6;
     sysMethod = GM;
     makeSameSysQ(isSameSysMethod, sysMethod, sameSysMethod);
     fillSysMatrix = fillSysMatrixTrapezoid;
@@ -165,16 +165,15 @@ void temp_main(){
 int main(){
     temp_main<double>();
 
-    /*
     double(*K)(double x, double y) = [](double x, double y){return 1.0;};
     double h = 1.0;
     double lambda = 1.0;
-    std::size_t nx = 6;
+    std::size_t nx = 8;
     double a = 0.0;
     std::vector<std::vector<double>> matrix;
 
     fillSysMatrixSimpson(matrix, a, h, nx, lambda, K);
-    std::cout << matrix;
-    */
+    writeMatrixFile(matrix, "tmp.txt");
+    
     return 0;
 }
