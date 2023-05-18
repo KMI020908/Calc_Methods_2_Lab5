@@ -41,6 +41,14 @@ Type quadMethod(const std::vector<Type>&, Type, Type, std::size_t, Type, Type (*
     std::cout << "Количество итераций уравнения " << numOfEq << ":\t" << getSecondFredholmIntegral_SIt(solution, U0, numOfXIntervals, a, b, lambda, K, f, quadMethod, eps, stopIt) << '\n';
     writeVectorFile(solution, SOLUTION_FILE);
 }
+
+// Оценка порядка сходимости метода квадпратур
+template<typename Type>
+void getErrEstimateQuad(const std::string &fileName, Type (*realSol)(Type x), std::size_t numOfIt, std::size_t numOfXIntervals, Type a, Type b, Type lambda, Type (*K)(Type, Type), Type (*f)(Type), 
+void(*fillSysMatrix)(std::vector<std::vector<Type>>&, Type, Type, std::size_t, Type, Type(*)(Type, Type)), SYSTEM_FLAG sysMethod){ 
+    std::string SOLUTION_FILE = "D:\\Calc_Methods_2\\Lab5\\errEstQuad\\err" + fileName + ".txt";
+    errEstimateQuadMethod(SOLUTION_FILE, realSol, numOfIt, numOfXIntervals, a, b, lambda, K, f, fillSysMatrix, sysMethod);
+}
 /*
 // Решенние уравнения Пуассона
 template<typename Type>
@@ -57,15 +65,6 @@ Type(*U0)(Type x, Type y), Type(*xi)(Type x, Type y), Type(*psi)(Type x, Type y)
     std::cout << "Количество итераций уравнения " << numOfEq << ":\t" << solve2DStationaryPoissonEquation(SOLUTION_FILE, L1, L2, tau, numOfXIntervals, numOfYIntervals, condsX, condsY, U0, xi, psi, f, eps) << '\n' << '\n';
     writeVectorFile(dataVec, DATA_FILE);
     writeVectorFile(numOfIntervalsVec, INTERVAL_FILE);
-}
-
-// Оценка порядка сходимости при разных sigma при известном аналитическом решении
-template<typename Type>
-void getCoverageEstimate(std::size_t numOfEq, Type(*realSol)(Type t, Type x, Type y), std::size_t numOfIt, Type L1, Type L2, Type timeEnd,
-std::size_t numOfXIntervals, std::size_t numOfYIntervals, std::size_t numOfTIntervals, CONDS_FLAG condsX, CONDS_FLAG condsY, 
-Type(*U0)(Type x, Type y), Type(*T)(Type x, Type y), Type(*Q)(Type x, Type y), Type(*f)(Type t, Type x, Type y)){ 
-    std::string SOLUTION_FILE = "D:\\Calc_Methods_2\\Lab4\\coverageEst\\coverage" + std::to_string(numOfEq) + ".txt";
-    getRealSolEstimatePoisson2DEq(SOLUTION_FILE, realSol, numOfIt, L1, L2, timeEnd, numOfXIntervals, numOfYIntervals, numOfTIntervals, condsX, condsY, U0, T, Q, f);
 }
 
 template<typename Type>
@@ -116,10 +115,11 @@ template<typename Type>
 void temp_main(){
     std::size_t numOfEq;
     Type a, b, lambda, eps;
-    std::size_t numOfXIntervals, stopIt;
+    std::size_t numOfXIntervals, stopIt, numOfIt;
     Type (*K)(Type x, Type y) = nullptr;
     Type (*f)(Type x) = nullptr;
     Type (*U0)(Type x) = nullptr;
+    Type (*realSol)(Type x) = nullptr;
     void(*fillSysMatrix)(std::vector<std::vector<Type>>&, Type, Type, std::size_t, Type, Type(*)(Type, Type)) = nullptr;
     Type (*quadMethod)(const std::vector<Type>&, Type, Type, std::size_t, Type, Type (*)(Type, Type)) = nullptr;
     SYSTEM_FLAG sysMethod;
@@ -148,7 +148,7 @@ void temp_main(){
     K = K1;
     f = f1;
     lambda = 1.0;
-    numOfXIntervals = 100;
+    numOfXIntervals = 10;
 
     sysMethod = GM;
     makeSameQ(isSameSysMethod, sysMethod, sameSysMethod);
@@ -231,6 +231,36 @@ void temp_main(){
     makeSameQuadQ(isSameQuadMethodSimpleIt, &quadMethod, &sameQuadMethod);
     makeSameQ(isSameEps, eps, sameEps);
     //checkSimpleIt(numOfEq, numOfXIntervals, a, b, lambda, K, f, U0, quadMethod, eps);
+
+
+    // Специальный тест для проверки порядка сходимости метода квадратур
+    numOfEq = 5;
+    a = 0.0;
+    b = 1.0;
+    K = K3;
+    f = f3;
+    lambda = 1.0;
+    numOfXIntervals = 10;
+
+    sysMethod = GM;
+    makeSameQ(isSameSysMethod, sysMethod, sameSysMethod);
+    fillSysMatrix = fillSysMatrixTrapezoid;
+    makeSameSysQuadQ(isSameSysQuad, &fillSysMatrix, &fillSameSysMatrix);
+    //checkQuadMethod(numOfEq, numOfXIntervals, a, b, lambda, K, f, fillSysMatrix, sysMethod);
+    
+    realSol = [](Type x){return std::sin(x);};
+    numOfIt = 7;
+    fillSysMatrix = fillSysMatrixTrapezoid;
+    getErrEstimateQuad("Trapezoid", realSol, numOfIt, numOfXIntervals, a, b, lambda, K, f, fillSysMatrix, sysMethod);
+    fillSysMatrix = fillSysMatrixSimpson;
+    getErrEstimateQuad("Simpson", realSol, numOfIt, numOfXIntervals, a, b, lambda, K, f, fillSysMatrix, sysMethod);
+
+    eps = 1e-6;
+    //U0 = [](Type x){return 0.0;};
+    quadMethod = trapezoidQuad;
+    makeSameQuadQ(isSameQuadMethodSimpleIt, &quadMethod, &sameQuadMethod);
+    makeSameQ(isSameEps, eps, sameEps);
+    //checkSimpleIt(numOfEq, numOfXIntervals, a, b, lambda, K, f, f, quadMethod, eps);
 }
 
 int main(){

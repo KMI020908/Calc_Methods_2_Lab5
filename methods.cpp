@@ -5325,6 +5325,32 @@ void(*fillSysMatrix)(std::vector<std::vector<Type>>&, Type, Type, std::size_t, T
     return h;
 }
 
+// Оценка порядка точности
+template<typename Type>
+FILE_FLAG errEstimateQuadMethod(const std::string &speedFile, Type (*realSol)(Type x), std::size_t numOfIt, std::size_t numOfXIntervals, Type a, Type b, Type lambda, Type (*K)(Type, Type), Type (*f)(Type), 
+void(*fillSysMatrix)(std::vector<std::vector<Type>>&, Type, Type, std::size_t, Type, Type(*)(Type, Type)), SYSTEM_FLAG sysMethod){
+    std::vector<Type> errVec;
+    std::vector<Type> solution;
+    std::vector<Type> realSolVec;
+    Type h = (b - a) / numOfXIntervals;
+    std::size_t multCoeff = 2;
+    for (std::size_t m = 0; m < numOfIt; m++){
+        getSecondFredholmIntegral_QM(solution, numOfXIntervals, a, b, lambda, K, f, fillSysMatrix, sysMethod);
+        realSolVec.resize(numOfXIntervals + 1);
+        for (std::size_t i = 0; i < numOfXIntervals + 1; i++){
+            realSolVec[i] = realSol(a + i * h);
+        }
+        errVec.push_back(normOfVector(solution - realSolVec, INFINITY));
+        numOfXIntervals *= multCoeff;
+        h = (b - a) / numOfXIntervals;
+    }
+    for (std::size_t i = 0; i < numOfIt - 1; i++){
+        errVec[i] = errVec[i] / errVec[i + 1];
+    }
+    errVec.pop_back();
+    return writeVectorFile(errVec, speedFile);
+}
+
 // Квадратурные формулы для вычислений интеграла в уравнении Фредгольма в точке x
 template<typename Type>
 Type trapezoidQuad(const std::vector<Type> &UVec, Type x, Type a, std::size_t numOfXIntervals, Type h, Type (*K)(Type, Type)){
@@ -5354,10 +5380,7 @@ Type (*quadMethod)(const std::vector<Type>&, Type, Type, std::size_t, Type, Type
             solution[i] = f(a + i * h) + lambda * quadMethod(prevSolution, a + i * h, a, numOfXIntervals, h, K);
         }
         numOfIterations++;
-        Type norm = normOfVector(solution - prevSolution, INFINITY);
-        if(numOfIterations == 100){
-            Type a = 5.0;
-        }
+        //Type norm = normOfVector(solution - prevSolution, INFINITY);
     } while (normOfVector(solution - prevSolution, INFINITY) > eps && numOfIterations != stopIt);
     return numOfIterations;
 }

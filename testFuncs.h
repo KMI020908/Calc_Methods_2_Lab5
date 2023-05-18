@@ -25,4 +25,15 @@ Type K2(Type x, Type y){
     return 0.5 * (1.0 - x * std::cos(x * y));
 }
 
+// Тест с известным аналитическим решением
+template<typename Type>
+Type f3(Type x){
+    return x * (std::cos(1.0) - std::sin(1.0)) + std::sin(x);
+}
+
+template<typename Type>
+Type K3(Type x, Type y){
+    return x * y;
+}
+
 #endif
