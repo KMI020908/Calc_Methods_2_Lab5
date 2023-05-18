@@ -51,6 +51,30 @@ Type quadMethod(const std::vector<Type>&, Type, Type, std::size_t, Type, Type (*
     writeVectorFile(solution, SOLUTION_FILE);
 }
 
+// Зависимость точности от количесвто итераций в методе простой итерации
+template<typename Type>
+void simpleIterationsAnalys(const std::string &fileName, Type (*realSol)(Type x), std::size_t numOfXIntervals, Type a, Type b, Type lambda, Type (*K)(Type, Type), Type (*f)(Type), Type (*U0)(Type),
+Type quadMethod(const std::vector<Type>&, Type, Type, std::size_t, Type, Type (*)(Type, Type)), std::size_t it0, std::size_t itStep, std::size_t numOfErrors, Type eps = 1e-6){
+    std::string SOLUTION_FILE = "D:\\Calc_Methods_2\\Lab5\\simpleIterationsAnalys\\it" + fileName + ".txt";
+
+    std::vector<Type> numSol;
+    std::vector<Type> realSolVec(numOfXIntervals + 1);
+    Type h = (b - a) / numOfXIntervals;
+    for (std::size_t i = 0; i < numOfXIntervals + 1; i++){
+        realSolVec[i] = realSol(a + i * h);
+    }
+    
+    std::vector<Type> errVec;
+    std::size_t tempIt = it0;
+    for (std::size_t i = 0; i < numOfErrors; i++){
+        getSecondFredholmIntegral_SIt(numSol, U0, numOfXIntervals, a, b, lambda, K, f, quadMethod, eps, tempIt);
+        errVec.push_back(normOfVector(numSol - realSolVec, INFINITY));
+        tempIt += itStep;
+    }
+    writeVectorFile(errVec, SOLUTION_FILE);
+}
+
+
 // Проверка решений с вырожденным ядром
 template<typename Type>
 void checkDegenerateKernel(std::size_t numOfEq,  std::size_t numOfXIntervals, Type a, Type b, Type lambda, 
@@ -128,7 +152,7 @@ template<typename Type>
 void temp_main(){
     std::size_t numOfEq;
     Type a, b, lambda, eps;
-    std::size_t numOfXIntervals, stopIt, numOfIt, numOfTeylorSums;
+    std::size_t numOfXIntervals, stopIt, numOfIt, numOfTeylorSums, it0, itStep, numOfErrs;
     Type (*K)(Type x, Type y) = nullptr;
     std::vector<Type(*)(Type)> phiVec = {};
     std::vector<Type(*)(Type)> psiVec = {};
@@ -194,6 +218,10 @@ void temp_main(){
     makeSameQuadQ(isSameQuadMethodSimpleIt, &quadMethod, &sameQuadMethod);
     makeSameQ(isSameEps, eps, sameEps);
     //checkSimpleIt(numOfEq, numOfXIntervals, a, b, lambda, K, f, f, quadMethod, eps);
+    it0 = 1;
+    itStep = 1;
+    numOfErrs = 15;
+    //simpleIterationsAnalys(std::to_string(numOfEq), realSol, numOfXIntervals, a, b, lambda, K, f, f, quadMethod, it0, itStep, numOfErrs, eps);
 
     numOfTeylorSums = 5;
     phiVec.resize(numOfTeylorSums);
@@ -205,7 +233,7 @@ void temp_main(){
     quadMethodMulty = trapezoidQuadMulty;
     sysMethod = GM;
     //checkDegenerateKernel(numOfEq, numOfXIntervals, a, b, lambda, phiVec, psiVec, f, quadMethodMulty, sysMethod);
-    degKernelAnalys(std::to_string(1), realSol, numOfXIntervals, a, b, lambda, allPhiVecK1, allPsiVecK1, f, quadMethodMulty, sysMethod);
+    //degKernelAnalys(std::to_string(1), realSol, numOfXIntervals, a, b, lambda, allPhiVecK1, allPsiVecK1, f, quadMethodMulty, sysMethod);
 
     // Первый тест из методички при [a, b] = [0.1, 1]
     numOfEq = 2;
@@ -332,7 +360,11 @@ void temp_main(){
     quadMethod = trapezoidQuad;
     makeSameQuadQ(isSameQuadMethodSimpleIt, &quadMethod, &sameQuadMethod);
     makeSameQ(isSameEps, eps, sameEps);
-    //checkSimpleIt(numOfEq, numOfXIntervals, a, b, lambda, K, f, f, quadMethod, eps);
+    checkSimpleIt(numOfEq, numOfXIntervals, a, b, lambda, K, f, f, quadMethod, eps);
+    it0 = 1;
+    itStep = 1;
+    numOfErrs = 15;
+    //simpleIterationsAnalys(std::to_string(numOfEq), realSol, numOfXIntervals, a, b, lambda, K, f, f, quadMethod, it0, itStep, numOfErrs, eps);
 
     numOfTeylorSums = 1;
     phiVec.resize(numOfTeylorSums);
@@ -414,7 +446,7 @@ void temp_main(){
     quadMethodMulty = trapezoidQuadMulty;
     sysMethod = GM;
     //checkDegenerateKernel(numOfEq, numOfXIntervals, a, b, lambda, phiVec, psiVec, f, quadMethodMulty, sysMethod);
-    degKernelAnalys(std::to_string(6), realSol, numOfXIntervals, a, b, lambda, allPhiVecK4, allPsiVecK4, f, quadMethodMulty, sysMethod);
+    //degKernelAnalys(std::to_string(6), realSol, numOfXIntervals, a, b, lambda, allPhiVecK4, allPsiVecK4, f, quadMethodMulty, sysMethod);
 }
 
 int main(){
