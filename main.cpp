@@ -67,6 +67,39 @@ Type (*quadMethod)(Type, std::size_t, Type, Type(*)(Type), Type(*)(Type)), SYSTE
     writeVectorFile(solution, SOLUTION_FILE);
 }
 
+// Зависимость точности от числа слагаемых в разложении ряда тейлора
+template<typename Type>
+std::size_t degKernelAnalys(const std::string &fileName, Type (*realSol)(Type x),  std::size_t numOfXIntervals, Type a, Type b, Type lambda, 
+const std::vector<Type(*)(Type)> &allPhiVec, const std::vector<Type(*)(Type)> &allPsiVec, Type (*f)(Type), 
+Type (*quadMethod)(Type, std::size_t, Type, Type(*)(Type), Type(*)(Type)), SYSTEM_FLAG sysMethod){
+    std::size_t m = allPhiVec.size();
+    if (m != allPsiVec.size()){
+        return 0;
+    }
+    std::string SOLUTION_FILE = "D:\\Calc_Methods_2\\Lab5\\KernelAnalys\\ker" + fileName + ".txt";
+    std::vector<Type(*)(Type)> phiVec = {allPhiVec[0]};
+    std::vector<Type(*)(Type)> psiVec = {allPsiVec[0]};
+
+    std::vector<Type> numSol;
+    std::vector<Type> realSolVec(numOfXIntervals + 1);
+    Type h = (b - a) / numOfXIntervals;
+    for (std::size_t i = 0; i < numOfXIntervals + 1; i++){
+        realSolVec[i] = realSol(a + i * h);
+    }
+    
+    std::vector<Type> errVec;
+    for (std::size_t i = 1; i < m; i++){
+        phiVec.push_back(allPhiVec[i]);
+        psiVec.push_back(allPsiVec[i]);
+        getSecondFredholmIntegral_DegKernel(numSol, numOfXIntervals, a, b, lambda, phiVec, psiVec, f, quadMethod, sysMethod);
+        errVec.push_back(normOfVector(numSol - realSolVec, INFINITY));
+    }
+    
+    writeVectorFile(errVec, SOLUTION_FILE);
+    return m;
+}
+
+
 // Сделать, чтобы системы решались одним методом
 template<typename Type>
 void makeSameQ(bool isSame, Type &var, const Type &sameVar){
@@ -97,8 +130,9 @@ void temp_main(){
     Type a, b, lambda, eps;
     std::size_t numOfXIntervals, stopIt, numOfIt, numOfTeylorSums;
     Type (*K)(Type x, Type y) = nullptr;
+    std::vector<Type(*)(Type)> phiVec = {};
+    std::vector<Type(*)(Type)> psiVec = {};
     Type (*f)(Type x) = nullptr;
-    Type (*U0)(Type x) = nullptr;
     Type (*realSol)(Type x) = nullptr;
     void(*fillSysMatrix)(std::vector<std::vector<Type>>&, Type, Type, std::size_t, Type, Type(*)(Type, Type)) = nullptr;
     Type (*quadMethod)(const std::vector<Type>&, Type, Type, std::size_t, Type, Type (*)(Type, Type)) = nullptr;
@@ -138,9 +172,6 @@ void temp_main(){
         [](Type s){return std::pow(s, 8.0);}, 
         [](Type s){return std::pow(s, 10.0);}
     };
-    std::vector<Type(*)(Type)> phiVec = {};
-    std::vector<Type(*)(Type)> psiVec = {};
-
 
     // Первый тест из методички при [a, b] = [0, 1]
     numOfEq = 1;
@@ -150,6 +181,7 @@ void temp_main(){
     f = f1;
     lambda = 1.0;
     numOfXIntervals = 100;
+    realSol = [](Type x){return 1.0;};
 
     sysMethod = GM;
     makeSameQ(isSameSysMethod, sysMethod, sameSysMethod);
@@ -158,11 +190,10 @@ void temp_main(){
     //checkQuadMethod(numOfEq, numOfXIntervals, a, b, lambda, K, f, fillSysMatrix, sysMethod);
 
     eps = 1e-6;
-    U0 = [](Type x){return 0.0;};
     quadMethod = trapezoidQuad;
     makeSameQuadQ(isSameQuadMethodSimpleIt, &quadMethod, &sameQuadMethod);
     makeSameQ(isSameEps, eps, sameEps);
-    //checkSimpleIt(numOfEq, numOfXIntervals, a, b, lambda, K, f, U0, quadMethod, eps);
+    //checkSimpleIt(numOfEq, numOfXIntervals, a, b, lambda, K, f, f, quadMethod, eps);
 
     numOfTeylorSums = 5;
     phiVec.resize(numOfTeylorSums);
@@ -174,6 +205,7 @@ void temp_main(){
     quadMethodMulty = trapezoidQuadMulty;
     sysMethod = GM;
     //checkDegenerateKernel(numOfEq, numOfXIntervals, a, b, lambda, phiVec, psiVec, f, quadMethodMulty, sysMethod);
+    degKernelAnalys(std::to_string(1), realSol, numOfXIntervals, a, b, lambda, allPhiVecK1, allPsiVecK1, f, quadMethodMulty, sysMethod);
 
     // Первый тест из методички при [a, b] = [0.1, 1]
     numOfEq = 2;
@@ -191,11 +223,10 @@ void temp_main(){
     //checkQuadMethod(numOfEq, numOfXIntervals, a, b, lambda, K, f, fillSysMatrix, sysMethod);
 
     eps = 1e-6;
-    U0 = [](Type x){return 0.0;};
     quadMethod = trapezoidQuad;
     makeSameQuadQ(isSameQuadMethodSimpleIt, &quadMethod, &sameQuadMethod);
     makeSameQ(isSameEps, eps, sameEps);
-    //checkSimpleIt(numOfEq, numOfXIntervals, a, b, lambda, K, f, U0, quadMethod, eps);
+    //checkSimpleIt(numOfEq, numOfXIntervals, a, b, lambda, K, f, f, quadMethod, eps);
 
     numOfTeylorSums = 5;
     phiVec.resize(numOfTeylorSums);
@@ -225,11 +256,10 @@ void temp_main(){
     //checkQuadMethod(numOfEq, numOfXIntervals, a, b, lambda, K, f, fillSysMatrix, sysMethod);
 
     eps = 1e-6;
-    U0 = [](Type x){return 0.0;};
     quadMethod = trapezoidQuad;
     makeSameQuadQ(isSameQuadMethodSimpleIt, &quadMethod, &sameQuadMethod);
     makeSameQ(isSameEps, eps, sameEps);
-    //checkSimpleIt(numOfEq, numOfXIntervals, a, b, lambda, K, f, U0, quadMethod, eps);
+    //checkSimpleIt(numOfEq, numOfXIntervals, a, b, lambda, K, f, f, quadMethod, eps);
 
     numOfTeylorSums = 5;
     phiVec.resize(numOfTeylorSums);
@@ -259,11 +289,10 @@ void temp_main(){
     //checkQuadMethod(numOfEq, numOfXIntervals, a, b, lambda, K, f, fillSysMatrix, sysMethod);
 
     eps = 1e-6;
-    U0 = [](Type x){return 0.0;};
     quadMethod = trapezoidQuad;
     makeSameQuadQ(isSameQuadMethodSimpleIt, &quadMethod, &sameQuadMethod);
     makeSameQ(isSameEps, eps, sameEps);
-    //checkSimpleIt(numOfEq, numOfXIntervals, a, b, lambda, K, f, U0, quadMethod, eps);
+    //checkSimpleIt(numOfEq, numOfXIntervals, a, b, lambda, K, f, f, quadMethod, eps);
 
     numOfTeylorSums = 5;
     phiVec.resize(numOfTeylorSums);
@@ -300,7 +329,6 @@ void temp_main(){
     //getErrEstimateQuad("Simpson", realSol, numOfIt, numOfXIntervals, a, b, lambda, K, f, fillSysMatrix, sysMethod);
 
     eps = 1e-6;
-    //U0 = [](Type x){return 0.0;};
     quadMethod = trapezoidQuad;
     makeSameQuadQ(isSameQuadMethodSimpleIt, &quadMethod, &sameQuadMethod);
     makeSameQ(isSameEps, eps, sameEps);
@@ -339,7 +367,6 @@ void temp_main(){
     //getErrEstimateQuad("Simpson2", realSol, numOfIt, numOfXIntervals, a, b, lambda, K, f, fillSysMatrix, sysMethod);
 
     eps = 1e-6;
-    //U0 = [](Type x){return 0.0;};
     quadMethod = trapezoidQuad;
     makeSameQuadQ(isSameQuadMethodSimpleIt, &quadMethod, &sameQuadMethod);
     makeSameQ(isSameEps, eps, sameEps);
@@ -356,7 +383,10 @@ void temp_main(){
         [](Type x){return std::pow(x, 7.0) / 5040;}, 
         [](Type x){return std::pow(x, 8.0) / 40320;}, 
         [](Type x){return std::pow(x, 9.0) / 362880.0;},
-        [](Type x){return std::pow(x, 10.0) / 3628800.0;}
+        [](Type x){return std::pow(x, 10.0) / 3628800.0;},
+        [](Type x){return std::pow(x, 11.0) / 39916800.0;},
+        [](Type x){return std::pow(x, 12.0) / 479001600.0;},
+        [](Type x){return std::pow(x, 13.0) / 6227020800.0;}
     };
     std::vector<Type(*)(Type)> allPsiVecK4 = {
         [](Type s){return 1.0;},
@@ -369,7 +399,10 @@ void temp_main(){
         [](Type s){return std::pow(s, 7.0);}, 
         [](Type s){return std::pow(s, 8.0);}, 
         [](Type s){return std::pow(s, 9.0);},
-        [](Type s){return std::pow(s, 10.0);}
+        [](Type s){return std::pow(s, 10.0);},
+        [](Type s){return std::pow(s, 11.0);},
+        [](Type s){return std::pow(s, 12.0);},
+        [](Type s){return std::pow(s, 13.0);}
     };
     numOfTeylorSums = 10;
     phiVec.resize(numOfTeylorSums);
@@ -380,7 +413,8 @@ void temp_main(){
     }
     quadMethodMulty = trapezoidQuadMulty;
     sysMethod = GM;
-    checkDegenerateKernel(numOfEq, numOfXIntervals, a, b, lambda, phiVec, psiVec, f, quadMethodMulty, sysMethod);
+    //checkDegenerateKernel(numOfEq, numOfXIntervals, a, b, lambda, phiVec, psiVec, f, quadMethodMulty, sysMethod);
+    degKernelAnalys(std::to_string(6), realSol, numOfXIntervals, a, b, lambda, allPhiVecK4, allPsiVecK4, f, quadMethodMulty, sysMethod);
 }
 
 int main(){
