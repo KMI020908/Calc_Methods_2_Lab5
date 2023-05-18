@@ -5325,7 +5325,7 @@ void(*fillSysMatrix)(std::vector<std::vector<Type>>&, Type, Type, std::size_t, T
     return h;
 }
 
-// Оценка порядка точности
+// Оценка порядка точности метода квадратур
 template<typename Type>
 FILE_FLAG errEstimateQuadMethod(const std::string &speedFile, Type (*realSol)(Type x), std::size_t numOfIt, std::size_t numOfXIntervals, Type a, Type b, Type lambda, Type (*K)(Type, Type), Type (*f)(Type), 
 void(*fillSysMatrix)(std::vector<std::vector<Type>>&, Type, Type, std::size_t, Type, Type(*)(Type, Type)), SYSTEM_FLAG sysMethod){
@@ -5350,6 +5350,7 @@ void(*fillSysMatrix)(std::vector<std::vector<Type>>&, Type, Type, std::size_t, T
     errVec.pop_back();
     return writeVectorFile(errVec, speedFile);
 }
+
 
 // Квадратурные формулы для вычислений интеграла в уравнении Фредгольма в точке x
 template<typename Type>
@@ -5384,3 +5385,76 @@ Type (*quadMethod)(const std::vector<Type>&, Type, Type, std::size_t, Type, Type
     } while (normOfVector(solution - prevSolution, INFINITY) > eps && numOfIterations != stopIt);
     return numOfIterations;
 }
+
+
+// Квадратурные формулы для вычислений интеграла произведения функций в уравнении Фредгольма с вырожденным ядром
+template<typename Type>
+Type trapezoidQuadMulty(Type a, std::size_t numOfXIntervals, Type h, Type(*f1)(Type), Type(*f2)(Type)){
+    Type quadSum = 0.0;
+    for (std::size_t i = 1; i < numOfXIntervals + 1; i++){
+        quadSum += (f1(a + (i - 1) * h) * f2(a + (i - 1) * h) + f1(a + i * h) * f2(a + i * h)) * h / 2.0;
+    }
+    return quadSum;
+}
+
+// Решение интегрального уравнения Фредгольма с вырожденным ядром, т.е. K(x, s) = Sum[phi_k(x) * psi_k(s), {k, 1, m}]
+template<typename Type>
+Type getSecondFredholmIntegral_DegKernel(std::vector<Type> &solution, std::size_t numOfXIntervals, Type a, Type b, Type lambda, 
+const std::vector<Type(*)(Type)> &phiVec, const std::vector<Type(*)(Type)> &psiVec, Type (*f)(Type), 
+Type (*quadMethod)(Type, std::size_t, Type, Type(*)(Type), Type(*)(Type)), SYSTEM_FLAG sysMethod){
+    std::size_t m = phiVec.size();
+    if (m != psiVec.size()){
+        return NAN;
+    }
+
+    if (solution.size() != numOfXIntervals + 1){
+        solution.resize(numOfXIntervals + 1);
+    }
+    Type h = (b - a) / numOfXIntervals;
+    
+    // Матрица для отыскивания коэффициентов C
+    std::vector<std::vector<Type>> lMatrix(m);
+    for (std::size_t i = 0; i < m; i++){
+        lMatrix[i].resize(m);
+        for (std::size_t j = 0; j < i; j++){
+            lMatrix[i][j] = -lambda * quadMethod(a, numOfXIntervals, h, psiVec[i], phiVec[j]);
+        }
+        lMatrix[i][i] = 1.0 - lambda * quadMethod(a, numOfXIntervals, h, psiVec[i], phiVec[i]); 
+        for (std::size_t j = i + 1; j < m; j++){
+            lMatrix[i][j] = -lambda * quadMethod(a, numOfXIntervals, h, psiVec[i], phiVec[j]); 
+        }
+    }
+    // Правая часть для отыскивания коэффициентов C
+    std::vector<Type> rVec(m);
+    for (std::size_t i = 0; i < m; i++){
+        rVec[i] = quadMethod(a, numOfXIntervals, h, psiVec[i], f);
+    }
+    // Нахождение коэффициентов C
+    std::vector<Type> CVec(m);
+    switch (sysMethod){
+    case GM:
+        gaussMethod(lMatrix, rVec, CVec);
+        break;
+    case QR:
+        qrMethod(lMatrix, rVec, CVec);
+        break;
+    case SM:
+        simpleItMethod(lMatrix, rVec, rVec, CVec, h);
+        break;
+    case JM:
+        JacobiMethod(lMatrix, rVec, rVec, CVec);
+        break;
+    case RM:
+        relaxationMethod(lMatrix, rVec, rVec, CVec);
+    default:
+        break;
+    }
+    for (std::size_t i = 0; i < numOfXIntervals + 1; i++){
+        Type sum = 0.0;
+        for (std::size_t k = 0; k < m; k++){
+            sum += CVec[k] * phiVec[k](a + i * h);
+        }
+        solution[i] = f(a + i * h) + lambda * sum;
+    }
+    return h;
+} 

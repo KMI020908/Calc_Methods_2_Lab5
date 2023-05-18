@@ -36,4 +36,16 @@ Type K3(Type x, Type y){
     return x * y;
 }
 
+// Второй тест с известным аналитическим решением
+template<typename Type>
+Type f4(Type x){
+    return std::sin(x) - (1.0 + x * std::exp(M_PI_2 * x)) / (1.0 + std::pow(x, 2.0));
+}
+
+template<typename Type>
+Type K4(Type x, Type y){
+    return std::exp(x * y);
+}
+
+
 #endif

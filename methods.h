@@ -485,6 +485,11 @@ template<typename Type>
 Type getSecondFredholmIntegral_QM(std::vector<Type> &solution, std::size_t numOfXIntervals, Type a, Type b, Type lambda, Type (*K)(Type, Type), Type (*f)(Type), 
 void(*fillSysMatrix)(std::vector<std::vector<Type>>&, Type, Type, std::size_t, Type, Type(*)(Type, Type)), SYSTEM_FLAG sysMethod);
 
+// Оценка порядка точности
+template<typename Type>
+FILE_FLAG errEstimateQuadMethod(const std::string &speedFile, Type (*realSol)(Type x), std::size_t numOfIt, std::size_t numOfXIntervals, Type a, Type b, Type lambda, Type (*K)(Type, Type), Type (*f)(Type), 
+void(*fillSysMatrix)(std::vector<std::vector<Type>>&, Type, Type, std::size_t, Type, Type(*)(Type, Type)), SYSTEM_FLAG sysMethod);
+
 
 // Квадратурные формулы для вычислений интеграла в уравнении Фредгольма в точке x
 template<typename Type>
@@ -494,5 +499,16 @@ Type trapezoidQuad(const std::vector<Type> &UVec, Type x, Type a, std::size_t nu
 template<typename Type>
 std::size_t getSecondFredholmIntegral_SIt(std::vector<Type> &solution, Type (*U0)(Type), std::size_t numOfXIntervals, Type a, Type b, Type lambda, Type (*K)(Type, Type), Type (*f)(Type), 
 Type (*quadMethod)(const std::vector<Type>&, Type, Type, std::size_t, Type, Type (*)(Type, Type)), Type eps = 1e-6, std::size_t stopIt = 50000);
+
+
+// Квадратурные формулы для вычислений интеграла произведения функций в уравнении Фредгольма с вырожденным ядром
+template<typename Type>
+Type trapezoidQuadMulty(Type a, std::size_t numOfXIntervals, Type h, Type(*f1)(Type), Type(*f2)(Type));
+
+// Решение интегрального уравнения Фредгольма с вырожденным ядром, т.е. K(x, s) = Sum[phi_k(x) * psi_k(s), {k, 1, m}]
+template<typename Type>
+Type getSecondFredholmIntegral_DegKernel(std::vector<Type> &solution, std::size_t numOfXIntervals, Type a, Type b, Type lambda, 
+const std::vector<Type(*)(Type)> &phiVec, const std::vector<Type(*)(Type)> &psiVec, Type (*f)(Type), 
+Type (*quadMethod)(Type, std::size_t, Type, Type(*)(Type), Type(*)(Type)), SYSTEM_FLAG sysMethod);
 
 #endif
