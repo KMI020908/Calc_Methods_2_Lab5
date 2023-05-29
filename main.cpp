@@ -124,6 +124,34 @@ Type (*quadMethod)(Type, std::size_t, Type, Type(*)(Type), Type(*)(Type)), SYSTE
 }
 
 
+// Проверка решений с сингулярным ядром 
+template<typename Type>
+void checkSingularIntegral(std::size_t numOfEq, Type(*f)(Type, Type), std::size_t numOfFinElems){
+    std::vector<Type> solution;
+    std::string SOLUTION_FILE;
+    std::string DATA_FILE;
+    getFileNames(numOfEq, SOLUTION_FILE, DATA_FILE, "singularIntegr");
+    writeScalarFile(numOfFinElems, DATA_FILE);
+    solveSingularIntegralEq(f, numOfFinElems, solution);
+    writeVectorFile(solution, SOLUTION_FILE);
+}
+
+// Зависимость R от количества разбиений N
+template<typename Type>
+void checkRCoverage(const std::string &fileName, Type(*f)(Type, Type), std::size_t numOfFinElems0, std::size_t step, std::size_t lastNumOfFinElems){
+    std::string SOLUTION_FILE = "D:\\Calc_Methods_2\\Lab5\\RAnalys\\R" + fileName + ".txt";
+    std::string DATA_FILE = "D:\\Calc_Methods_2\\Lab5\\RAnalys\\dataR" + fileName + ".txt";
+    std::vector<std::size_t> RDataList = {numOfFinElems0, step};
+    writeVectorFile(RDataList, DATA_FILE);
+    std::vector<Type> RList;
+    std::vector<Type> solution;
+    for (std::size_t m = numOfFinElems0; m < lastNumOfFinElems; m += step){
+        RList.push_back(solveSingularIntegralEq(f, m, solution));
+    }
+    writeVectorFile(RList, SOLUTION_FILE);
+}
+
+
 // Сделать, чтобы системы решались одним методом
 template<typename Type>
 void makeSameQ(bool isSame, Type &var, const Type &sameVar){
@@ -157,6 +185,7 @@ void temp_main(){
     std::vector<Type(*)(Type)> phiVec = {};
     std::vector<Type(*)(Type)> psiVec = {};
     Type (*f)(Type x) = nullptr;
+    Type (*F)(Type x, Type y) = nullptr; 
     Type (*realSol)(Type x) = nullptr;
     void(*fillSysMatrix)(std::vector<std::vector<Type>>&, Type, Type, std::size_t, Type, Type(*)(Type, Type)) = nullptr;
     Type (*quadMethod)(const std::vector<Type>&, Type, Type, std::size_t, Type, Type (*)(Type, Type)) = nullptr;
@@ -447,6 +476,37 @@ void temp_main(){
     sysMethod = GM;
     //checkDegenerateKernel(numOfEq, numOfXIntervals, a, b, lambda, phiVec, psiVec, f, quadMethodMulty, sysMethod);
     //degKernelAnalys(std::to_string(6), realSol, numOfXIntervals, a, b, lambda, allPhiVecK4, allPsiVecK4, f, quadMethodMulty, sysMethod);
+
+
+    // Сингулярные уравнения
+
+    // Сингулярное уравнение первый вариант
+    numOfEq = 1;
+    F = fSing1;
+    numOfXIntervals = 200;
+    //checkSingularIntegral(numOfEq, F, numOfXIntervals);
+    //checkRCoverage("1", F, 15, 5, 210);
+
+    // Сингулярное уравнение девятый вариант
+    numOfEq = 9;
+    F = fSing9;
+    numOfXIntervals = 200;
+    //checkSingularIntegral(numOfEq, F, numOfXIntervals);
+    //checkRCoverage("9", F, 15, 5, 210);
+
+    // Сингулярное уравнение девятый вариант
+    numOfEq = 8;
+    F = fSing8;
+    numOfXIntervals = 200;
+    //checkSingularIntegral(numOfEq, F, numOfXIntervals);
+    //checkRCoverage("8", F, 15, 5, 210);
+
+    // Сингулярное уравнение девятый вариант
+    numOfEq = 20;
+    F = fSing20;
+    numOfXIntervals = 200;
+    //checkSingularIntegral(numOfEq, F, numOfXIntervals);
+    //checkRCoverage("20", F, 15, 5, 210);
 }
 
 int main(){

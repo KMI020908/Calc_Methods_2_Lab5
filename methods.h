@@ -511,4 +511,9 @@ Type getSecondFredholmIntegral_DegKernel(std::vector<Type> &solution, std::size_
 const std::vector<Type(*)(Type)> &phiVec, const std::vector<Type(*)(Type)> &psiVec, Type (*f)(Type), 
 Type (*quadMethod)(Type, std::size_t, Type, Type(*)(Type), Type(*)(Type)), SYSTEM_FLAG sysMethod);
 
+
+// Вычисление специального интеграла с особенностью
+template<typename Type>
+Type solveSingularIntegralEq(Type (*f)(Type, Type), std::size_t numOfFinElems, std::vector<Type> &solution);
+
 #endif

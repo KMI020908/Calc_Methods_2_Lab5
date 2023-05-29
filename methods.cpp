@@ -5458,3 +5458,46 @@ Type (*quadMethod)(Type, std::size_t, Type, Type(*)(Type), Type(*)(Type)), SYSTE
     }
     return h;
 } 
+
+// Вычисление специального интеграла с особенностью
+template<typename Type>
+Type solveSingularIntegralEq(Type (*f)(Type, Type), std::size_t numOfFinElems, std::vector<Type> &solution){
+    if (solution.size() != numOfFinElems){
+        solution.resize(numOfFinElems);
+    }
+
+    std::vector<std::vector<Type>> sysMatrix(numOfFinElems + 1);
+    std::vector<Type> fVec(numOfFinElems + 1);
+    
+    Type deltaL = 2.0 * M_PI / numOfFinElems;
+    
+    for (std::size_t i = 1; i < numOfFinElems + 1; i++){
+        sysMatrix[i - 1].resize(numOfFinElems + 1);
+        Type gridArg =  deltaL * (i - 0.5);
+        Type k1 = std::cos(gridArg);
+        Type k2 = std::sin(gridArg);
+        fVec[i - 1] = f(k1, k2);
+        for (std::size_t j = 1; j < numOfFinElems + 1; j++){
+            gridArg = deltaL * (j - 1);
+            Type c1 = std::cos(gridArg);
+            Type c2 = std::sin(gridArg);
+            Type q1 = -(M_1_PI / 2.0) * (k2 - c2) / (std::pow(k1 - c1, 2.0) + std::pow(k2 - c2, 2.0)); 
+            Type q2 =  (M_1_PI / 2.0) * (k1 - c1) / (std::pow(k1 - c1, 2.0) + std::pow(k2 - c2, 2.0));
+            sysMatrix[i - 1][j - 1] = (k1 * q1 + k2 * q2) * deltaL;
+        }
+        sysMatrix[i - 1][numOfFinElems] = 1.0;
+    }
+
+    fVec[numOfFinElems] = 0.0;
+    sysMatrix[numOfFinElems].resize(numOfFinElems + 1);
+    for (std::size_t j = 0; j < numOfFinElems; j++){
+        sysMatrix[numOfFinElems][j] = deltaL;
+    }
+    sysMatrix[numOfFinElems][numOfFinElems] = 0.0;
+
+    gaussMethod(sysMatrix, fVec, solution);
+    Type R = solution[numOfFinElems]; 
+    solution.pop_back();
+
+    return R;
+} 

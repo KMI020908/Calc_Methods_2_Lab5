@@ -47,5 +47,40 @@ Type K4(Type x, Type y){
     return std::exp(x * y);
 }
 
+// Тест для проверки сингулярного интеграла, 1 вариант
+template<typename Type>
+Type fSing1(Type x, Type y){
+    if (y > 0.0){
+        return std::sin(std::acos(x));
+    }
+    return std::sin(2.0 * M_PI - std::acos(x));
+}
+
+// Тест для проверки сингулярного интеграла, 9 вариант
+template<typename Type>
+Type fSing9(Type x, Type y){
+    if (y > 0.0){
+        return std::sin(5.0 * std::acos(x));
+    }
+    return std::sin(5.0 * (2.0 * M_PI - std::acos(x)));
+}
+
+// Тест для проверки сингулярного интеграла, 8 вариант
+template<typename Type>
+Type fSing8(Type x, Type y){
+    if (y > 0.0){
+        return std::cos(4.0 * std::acos(x));
+    }
+    return std::cos(4.0 * (2.0 * M_PI - std::acos(x)));
+}
+
+// Тест для проверки сингулярного интеграла, 20 вариант
+template<typename Type>
+Type fSing20(Type x, Type y){
+    if (y > 0.0){
+        return std::cos(10.0 * std::acos(x));
+    }
+    return std::cos(10.0 * (2.0 * M_PI - std::acos(x)));
+}
 
 #endif
